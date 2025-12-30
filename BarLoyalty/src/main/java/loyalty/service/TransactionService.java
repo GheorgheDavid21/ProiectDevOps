@@ -1,0 +1,81 @@
+package loyalty.service;
+
+import loyalty.entity.Bar;
+import loyalty.entity.Transaction;
+import loyalty.entity.User;
+import loyalty.metrics.TransactionMetrics;
+import loyalty.repository.BarRepository;
+import loyalty.repository.TransactionRepository;
+import loyalty.repository.UserRepository;
+import loyalty.util.TransactionStatus;
+import loyalty.util.TransactionType;
+import org.springframework.stereotype.Service;
+
+import java.util.UUID;
+
+@Service
+public class TransactionService {
+    private final TransactionRepository transactionRepository;
+    private final UserRepository userRepository;
+    private final BarRepository barRepository;
+    private final QrServiceClient qrServiceClient;
+    private final WebSocketEventService wsService;
+    private final TransactionMetrics transactionMetrics;
+
+    public TransactionService(TransactionRepository transactionRepository,
+                              UserRepository userRepository,
+                              BarRepository barRepository,
+                              QrServiceClient qrServiceClient,
+                              WebSocketEventService wsService, TransactionMetrics transactionMetrics) {
+        this.transactionRepository = transactionRepository;
+        this.userRepository = userRepository;
+        this.barRepository = barRepository;
+        this.qrServiceClient = qrServiceClient;
+        this.wsService = wsService;
+        this.transactionMetrics = transactionMetrics;
+    }
+
+    public Transaction createEarnTransaction(UUID userId, UUID barId, int points) {
+        User user = userRepository.findById(userId).orElseThrow();
+        Bar bar = barRepository.findById(barId).orElseThrow();
+
+        Transaction tr = new Transaction();
+        tr.setUser(user);
+        tr.setBar(bar);
+        tr.setType(TransactionType.EARN);
+        tr.setPoints(points);
+        tr.setStatus(TransactionStatus.PENDING);
+
+        tr = transactionRepository.save(tr);
+
+        String qrCode = qrServiceClient.generateQrCode(tr.getId());
+        tr.setQrCode(qrCode);
+
+        return transactionRepository.save(tr);
+    }
+
+    public void validateTransaction(String qrCode) {
+        Transaction tr = transactionRepository
+                .findByQrCode(qrCode)
+                .orElseThrow();
+
+        boolean valid = qrServiceClient.validateQrCode(qrCode);
+        if (!valid) {
+            tr.setStatus(TransactionStatus.REJECTED);
+            transactionRepository.save(tr);
+            wsService.sendEvent(tr.getUser().getId(), "TRANSACTION_REJECTED");
+            return;
+        }
+        tr.setStatus(TransactionStatus.VALIDATED);
+        transactionMetrics.incrementValidated();
+        User user = tr.getUser();
+        user.setPoints(user.getPoints() + tr.getPoints());
+
+        userRepository.save(user);
+        transactionRepository.save(tr);
+
+        wsService.sendBalanceUpdate(user.getId(), user.getPoints());
+        wsService.sendEvent(user.getId(), "TRANSACTION_VALIDATED");
+    }
+
+}

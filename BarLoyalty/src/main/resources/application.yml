@@ -1,0 +1,15 @@
+jwt:
+  secret: ${JWT_SECRET}
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/loyalty
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
