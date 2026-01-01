@@ -1,9 +1,15 @@
-jwt:
-  secret: ${JWT_SECRET}
-
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/loyalty
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+
+jwt:
+  secret: ${jwt.secret:${JWT_SECRET}}
+  expiration-ms: 86400000
 
 management:
   endpoints:
