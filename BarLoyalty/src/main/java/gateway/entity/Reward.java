@@ -35,6 +35,6 @@ public class Reward {
     @JoinColumn(name = "bar_id", nullable = false)
     private Bar bar;
 
-    @Column(nullable = false)
-    private Instant createdAt = Instant.now();
+//    @Column(nullable = false)
+//    private Instant createdAt = Instant.now();
 }

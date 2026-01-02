@@ -45,6 +45,14 @@ public class GlobalExceptionHandler {
                 .body(new ErrorResponse("Access denied"));
     }
 
+    @ExceptionHandler(WrongPasswordException.class)
+    public ResponseEntity<ErrorResponse> handleWrongPassword(WrongPasswordException ex) {
+        return ResponseEntity
+                .status(HttpStatus.UNAUTHORIZED)
+                .body(new ErrorResponse(ex.getMessage()));
+    }
+
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGeneric(Exception ex) {
         return ResponseEntity

@@ -18,25 +18,34 @@ public class QrServiceClient {
     }
 
     public String generateQrCode(UUID transactionId) {
-        Map<String, String> request = Map.of("transactionId", transactionId.toString());
+        Map<String, String> request = Map.of("transaction_id", transactionId.toString());
 
         Map response = restTemplate.postForObject(
                 qrServiceUrl + "/qr/generate",
                 request,
                 Map.class
         );
-        return response.get("qrCode").toString();
+        if (response == null || !response.containsKey("qr_code")) {
+            throw new RuntimeException("Invalid response from QR Service");
+        }
+        return response.get("qr_code").toString();
     }
 
     public boolean validateQrCode(String qrCode) {
-        Map<String, String> request = Map.of("qrCode", qrCode);
+        Map<String, String> request = Map.of("qr_code", qrCode);
 
-        Map response = restTemplate.postForObject(
-                qrServiceUrl + "/qr/validate",
-                request,
-                Map.class
-        );
-        return Boolean.TRUE.equals(response.get("qrCode"));
+        try {
+            Map response = restTemplate.postForObject(
+                    qrServiceUrl + "/qr/validate",
+                    request,
+                    Map.class
+            );
+
+            return response != null && "VALIDATED".equals(response.get("status"));
+        } catch (Exception e){
+            return false;
+        }
+//        return Boolean.TRUE.equals(response.get("qrCode"));
     }
 
     public boolean ping() {

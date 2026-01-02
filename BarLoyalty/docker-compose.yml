@@ -30,10 +30,12 @@ services:
     secrets:
       - jwt_secret
       - db_password
+      - seed-passwords
     entrypoint: >
       sh -c "
       export SPRING_DATASOURCE_PASSWORD=$$(cat /run/secrets/db_password | tr -d '\r') &&
       export JWT_SECRET=$$(cat /run/secrets/jwt_secret | tr -d '\r') &&
+      export APP_SEED_PASSWORDS=$$(cat /run/secrets/seed-passwords) &&
       java -Djwt.secret=$$JWT_SECRET -jar app.jar
       "
     depends_on:
@@ -55,11 +57,35 @@ services:
       interval: 30s
       retries: 5
 
+  prometheus:
+    image: prom/prometheus:latest
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --web.enable-lifecycle
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    depends_on:
+      - gateway
+      - qr-service
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - prometheus
+
 secrets:
   jwt_secret:
     file: ./secrets/jwt_secret
   db_password:
     file: ./secrets/db_password
+  seed-passwords:
+    file: ./secrets/seed-passwords
 
 volumes:
   pgdata:

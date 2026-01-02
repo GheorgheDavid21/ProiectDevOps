@@ -14,14 +14,14 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/v1/admin/bars")
-@PreAuthorize("hasRole('BAR_ADMIN')")
+@RequestMapping("/api/v1/bars")
 @AllArgsConstructor
 public class BarController {
     private final BarRepository barRepository;
     private final UserRepository userRepository;
 
     @PostMapping
+    @PreAuthorize("hasRole('BAR_ADMIN')")
     public BarResponse createBar(@Parameter(hidden = true) @AuthenticationPrincipal String email, @RequestBody BarRequest barRequest) {
         User admin = userRepository.findByEmail(email).orElseThrow(() -> new EntityNotFoundException("User not found"));
         Bar bar = new Bar();
@@ -34,9 +34,18 @@ public class BarController {
     }
 
     @GetMapping("/my")
+    @PreAuthorize("hasRole('BAR_ADMIN')")
     public BarResponse myBar(@Parameter(hidden = true) @AuthenticationPrincipal String email) {
         User admin = userRepository.findByEmail(email).orElseThrow(() -> new EntityNotFoundException("User not found"));
         Bar bar = barRepository.findByAdminId(admin.getId()).orElseThrow();
         return BarResponse.fromEntity(bar);
+    }
+
+    @GetMapping
+    @PreAuthorize("hasRole('CLIENT')")
+    public java.util.List<BarResponse> getAllBars() {
+        return barRepository.findAll().stream()
+                .map(BarResponse::fromEntity)
+                .toList();
     }
 }

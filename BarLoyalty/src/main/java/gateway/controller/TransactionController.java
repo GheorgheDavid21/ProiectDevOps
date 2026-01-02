@@ -47,4 +47,15 @@ public class TransactionController {
         return ResponseEntity.ok().build();
     }
 
+    @GetMapping("/history")
+    @PreAuthorize("hasRole('CLIENT')")
+    public java.util.List<TransactionResponse> getHistory(@Parameter(hidden = true) @AuthenticationPrincipal String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+
+        return transactionService.findAllByUserId(user.getId()).stream()
+                .map(TransactionResponse::fromEntity)
+                .toList();
+    }
+
 }

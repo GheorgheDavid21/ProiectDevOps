@@ -11,6 +11,7 @@ import gateway.util.TransactionStatus;
 import gateway.util.TransactionType;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -33,6 +34,10 @@ public class TransactionService {
         this.qrServiceClient = qrServiceClient;
         this.wsService = wsService;
         this.transactionMetrics = transactionMetrics;
+    }
+
+    public List<Transaction> findAllByUserId(UUID userId) {
+        return transactionRepository.findByUserId(userId);
     }
 
     public Transaction createEarnTransaction(UUID userId, UUID barId, int points) {

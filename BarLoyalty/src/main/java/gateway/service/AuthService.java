@@ -5,6 +5,7 @@ import gateway.dto.auth.LoginRequest;
 import gateway.dto.auth.RegisterRequest;
 import gateway.entity.User;
 import gateway.exception.EmailAlreadyUsedException;
+import gateway.exception.WrongPasswordException;
 import gateway.repository.UserRepository;
 import gateway.security.JwtTokenProvider;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -38,10 +39,10 @@ public class AuthService {
 
     public AuthResponse login(LoginRequest request) {
         User user = userRepository.findByEmail(request.email())
-                .orElseThrow(() -> new RuntimeException("Wrong email or password"));
+                .orElseThrow(() -> new WrongPasswordException("Wrong email or password"));
 
         if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
-            throw new RuntimeException("Wrong email or password");
+            throw new WrongPasswordException("Wrong email or password");
         }
 
         return new AuthResponse(tokenProvider.generateToken(user));

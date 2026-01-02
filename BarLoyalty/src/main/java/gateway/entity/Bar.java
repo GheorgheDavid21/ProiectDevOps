@@ -36,7 +36,7 @@ public class Bar {
     @OneToMany(mappedBy = "bar")
     private List<Transaction> transactions = new ArrayList<>();
 
-    @Column(nullable = false)
-    private Instant createdAt = Instant.now();
+//    @Column(nullable = false)
+//    private Instant createdAt = Instant.now();
 
 }
